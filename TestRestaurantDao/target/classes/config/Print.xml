@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC 
+"-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Print">
+	<select id="Print.SupplierOrderStatistics" parameterType="com.etao.restaurantentity.req.SupplierOrderStatisticsReq"
+		resultType="com.etao.restaurantentity.servicedomain.Print.SupplierOrderStatistics">		
+		DECLARE @begintime DATETIME
+		DECLARE @endtime DATETIME
+		DECLARE @supplierId int
+		SELECT @begintime=#{begintime,jdbcType=NVARCHAR},@endtime=#{endtime,jdbcType=NVARCHAR},@supplierId=#{supplierId,jdbcType=INTEGER}
+		 --临时表
+		 create table #tmpdineinfo(
+		 SupplierID int,OrderNumber nvarchar(50),CreatTime datetime,SupplierCategoryID int,
+		 SupplierDishId int,SupplierDishName nvarchar(500),Quantity int,SupplierPrice smallmoney,CustomerTotal smallmoney)
+		  
+		  <if test="orderType == 1 ">
+		  --堂食数据		   
+		  insert into #tmpdineinfo
+		  select 
+		  d.SupplierID
+		  ,'`'+d.OrderNumber as orderNumber --as '订单号', 
+		  ,Convert(varchar(10),d.CreatTime,120) --as '下单时间',
+		  ,s.SupplierCategoryID
+		  ,o.SupplierDishId
+		  ,o.SupplierDishName
+		  ,o.Quantity
+		  ,o.SupplierPrice
+		  ,(o.Quantity*o.SupplierPrice) as CustomerTotal  --该菜品总价 
+		from [Dine](nolock) d 
+		inner join OrderDetail(nolock) o on d.DineId=o.OrderId
+		inner join SupplierDish(nolock) s on s.SupplierDishID=o.SupplierDishId
+		 where d.SupplierID=@supplierId  --门店Id
+		and OrderStatusId=5 
+		and CreatTime>@begintime
+		and CreatTime &lt;@endtime
+		</if>	
+		<if test="orderType == 3 ">
+		--外卖数据
+		insert into #tmpdineinfo
+		  select 
+		  d.SupplierID
+		  ,'`'+convert(varchar(50),d.OrderNumber) --as '订单号', 
+		  ,d.AddedTime --as '下单时间',  
+		   ,s.SupplierCategoryID
+		  ,o.SupplierDishId
+		  ,o.SupplierDishName
+		  ,o.Quantity
+		  ,o.SupplierPrice
+		  ,o.Quantity*o.SupplierPrice as CustomerTotal  --该菜品总价
+		from [Delivery](nolock) d 
+		inner join [Order](nolock) o on d.DeliveryID=o.DeliveryID
+		inner join SupplierDish(nolock) s on s.SupplierDishID=o.SupplierDishId
+		 where d.SupplierID =@supplierId  --门店Id
+		and OrderStatusId=5 
+		and d.AddedTime>@begintime
+		and d.AddedTime &lt;@endtime
+		</if>
+		
+		select t.SupplierId,su.SupplierName,t.SupplierCategoryId,s.CategoryName,t.SupplierDishId,t.SupplierDishName,
+		sum(t.quantity) as Quantity,--数量
+		t.SupplierPrice,
+		sum(t.CustomerTotal) as CustomerTotal,--金额
+		(select sum(f.CustomerTotal) from #tmpdineinfo f where t.SupplierCategoryID=f.SupplierCategoryID and t.SupplierID=f.SupplierID) as CategoryTotal, --本类小计
+		(select sum(f.CustomerTotal) from #tmpdineinfo f where t.SupplierID=f.SupplierID) as AllTotal --所有菜品总价
+		from #tmpdineinfo (nolock) t
+		left join Category (nolock) s on t.SupplierCategoryID=s.CategoryID
+		left join Supplier(nolock) su on su.supplierId=t.SupplierID
+		group by t.supplierId,su.SupplierName,t.supplierCategoryId,s.CategoryName,t.supplierDishId,t.supplierDishName,t.SupplierPrice
+		order by t.supplierid,t.SupplierCategoryID,t.SupplierDishId		
+	</select>
+</mapper>

@@ -20,6 +20,16 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+		<groupId>com.lyp</groupId>
+		<artifactId>TestRestaurantEntity</artifactId>
+		<version>1.0.0</version>
+	</dependency>
+	<dependency>
+		<groupId>com.lyp</groupId>
+		<artifactId>TestRestaurantService</artifactId>
+		<version>1.0.0</version>
+	</dependency>
   </dependencies>
   <build>
     <finalName>TestRestaurantApi</finalName>

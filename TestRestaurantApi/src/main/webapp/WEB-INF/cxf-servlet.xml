@@ -15,7 +15,7 @@
 	http://www.springframework.org/schema/context
 	http://www.springframework.org/schema/context/spring-context-3.2.xsd">
 
-	<context:component-scan base-package="com.lyp.TestRestaurantApi.impl" />
+	<context:component-scan base-package="com.lyp.testRestaurantApi.impl" />
     
 	<jaxrs:server id="myService" address="/">	
 		<jaxrs:serviceBeans>
@@ -33,7 +33,5 @@
 		<jaxrs:outInterceptors>
 		</jaxrs:outInterceptors>		
 	</jaxrs:server>
-	<bean id="jacksonProvider" class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider">
-	</bean>
 	
 </beans>
